@@ -1,0 +1,137 @@
+#define BLYNK_PRINT Serial
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+#include<LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x27,16,2);
+
+
+
+int ir1 =D5;
+int irval;
+int ir2 =D6;
+int irval2;
+int red1 =D7;
+int green1 =D8;
+int red2 =D0;
+int green2 =D4;
+int buzzer =D10;
+int buzzer1 =D9;
+String web_left;
+String web_right;
+String web_left_light;
+String web_right_light;
+
+BlynkTimer timer;
+char auth[] = "RZpPrYzMp6RBq71WYfpTPJTKFKOetszt";
+char ssid[] ="iot";
+char pass[] ="12345678";
+
+void setup() 
+{
+  Serial.begin(9600);
+lcd.init();
+lcd.backlight();
+lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Connecting to...");    //start message
+  lcd.setCursor(0,1);
+  lcd.print(ssid);
+ 
+  pinMode(red1,OUTPUT);
+  pinMode(red2,OUTPUT);
+  pinMode(green1,OUTPUT);
+  pinMode(green2,OUTPUT);
+  pinMode(buzzer1,OUTPUT);
+  pinMode(ir1,INPUT);
+  pinMode(ir2,INPUT);
+  pinMode(buzzer,OUTPUT);
+  digitalWrite(buzzer,LOW);
+  digitalWrite(buzzer1,LOW);
+   Blynk.begin(auth,ssid,pass);
+ lcd.clear();
+ lcd.setCursor(0,0);
+ //Serial.println("WiFi connected");
+  lcd.print("Connected :-) "); 
+  delay(2000);
+  lcd.clear();
+  lcd.setCursor(0,0);
+ lcd.print("GHAT ACCIDENT");
+ lcd.setCursor(0,1);
+ lcd.print("AVOIDANCE SYSTEM");
+ delay(2000);
+ lcd.clear();
+ timer.setInterval(1000,sendupdata);
+ timer.setInterval(5000,web_push);
+ timer.setInterval(60000,rst);        
+}
+void rst()
+{
+ web_left ="-";
+ web_right ="-";
+ web_right_light ="-";
+ web_left_light ="-";
+}
+void web_push()
+{
+  Blynk.virtualWrite(V9,web_left+","+web_right+","+web_left_light+","+web_right_light);
+}
+
+void sendupdata()
+{
+ irval =digitalRead(ir1);
+ irval2=digitalRead(ir2);
+ if(irval ==0)
+ {
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("VEHICLE ARRIVING");
+  lcd.setCursor(0,1);
+  lcd.print("  GO SLOW");
+  digitalWrite(red1,HIGH);
+  digitalWrite(green1,LOW);
+  digitalWrite(buzzer,HIGH);
+  web_left ="VEHICLE TOWARDS LEFT LANE";
+  web_left_light ="GO SLOW";
+ }
+ else
+ {
+   lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("KEEP MOVING");
+  lcd.setCursor(0,1);
+  lcd.print("SAFE JOURNEY");
+  digitalWrite(red1,LOW);
+  digitalWrite(green1,HIGH);
+  digitalWrite(buzzer,LOW);
+ }
+ if(irval2 ==0)
+ {
+  lcd.clear();
+  lcd.print("VEHICLE ARRIVING");
+  lcd.setCursor(0,1);
+  lcd.print("  GO SLOW");
+  digitalWrite(red2,HIGH);
+  digitalWrite(green2,LOW);
+  digitalWrite(buzzer1,HIGH);
+   web_right ="VEHICLE TOWARDS RIGHT LANE";
+  web_right_light ="GO SLOW";
+ }
+ else
+ {
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("KEEP MOVING");
+  lcd.setCursor(0,1);
+  lcd.print("SAFE JOURNEY");
+   digitalWrite(red2,LOW);
+  digitalWrite(green2,HIGH);
+  digitalWrite(buzzer1,LOW);
+ }
+}
+
+
+void loop() 
+{
+  Blynk.run();
+  timer.run();
+}
